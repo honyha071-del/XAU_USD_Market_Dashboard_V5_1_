@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#070d19">
+<title>XAU/USD Market Dashboard V5.1 | TradingView Live</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#070d19;--panel:#101b2e;--panel2:#0b1425;--line:#263752;--muted:#9aa9c2;--white:#edf3ff;--blue:#246df0;--green:#00d084;--red:#ff5368;--yellow:#ffd45e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--white);font-family:Arial,"Noto Sans Khmer",sans-serif}
+.wrap{width:min(1500px,100%);margin:auto;padding:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:3px 2px 13px;flex-wrap:wrap}
+h1{font-size:clamp(19px,2.4vw,27px);margin:0;font-weight:800}.sub{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.5}
+.status{padding:8px 13px;border-radius:24px;background:#11253a;color:#a8b8d1;font-size:12px;border:1px solid #29415e;white-space:nowrap}.status.live{background:#062c21;border-color:#087b53;color:#35e5a2}.status.err{background:#351923;border-color:#873448;color:#ff8797}
+.panel,.card{background:var(--panel);border:1px solid var(--line);border-radius:15px}.panel{padding:13px;margin-top:11px}.controls{display:grid;grid-template-columns:minmax(170px,2fr) repeat(3,minmax(105px,1fr)) auto;gap:8px}
+input,select,button{width:100%;min-width:0;border:1px solid #344966;border-radius:10px;background:#0a1425;color:#f4f7ff;padding:11px 12px;font-size:14px}
+button{background:var(--blue);border:0;font-weight:750;cursor:pointer}button:active{transform:translateY(1px)}button:disabled{opacity:.55;cursor:wait}
+.note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:8px}
+.signal{margin-top:12px;border-radius:13px;padding:12px;text-align:center;font-weight:900;font-size:clamp(23px,3vw,31px);letter-spacing:.04em;border:1px solid}
+.signal.buy{background:#053c2b;border-color:#00a96d;color:#20e49b}.signal.sell{background:#431b26;border-color:#b43a50;color:#ff7185}.signal.wait{background:#3b3214;border-color:#8c7428;color:#ffdc62}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:10px}
+.card{padding:11px;min-width:0}.label{font-size:11px;color:var(--muted);letter-spacing:.05em}.value{font-size:clamp(16px,2vw,22px);font-weight:850;margin-top:5px;overflow-wrap:anywhere}
+.chart-panel{padding:10px;margin-top:11px}.chart-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}.chart-title{font-weight:800;font-size:16px}.chart-actions{display:flex;gap:6px;flex-wrap:wrap}.chart-actions button{width:auto;min-width:66px;padding:8px 11px;font-size:12px}
+.chartbox{height:430px;position:relative}.chartbox canvas{width:100%!important;height:100%!important}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#d8e2f2;margin:6px 2px 0}.dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+.two-col{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;margin-top:10px}.zone-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.zone{background:var(--panel2);border:1px solid var(--line);padding:11px;border-radius:11px;font-size:13px;line-height:1.7}.zone b{display:block;margin-bottom:4px}.supply{color:#ff8293}.demand{color:#43e4a2}.analysis-line{font-size:13px;line-height:1.9}.good{color:#38e2a0}.bad{color:#ff7889}.warn{color:#ffdc62}
+.tools-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tool-buttons{display:flex;gap:8px;margin-top:10px}.log{font-size:12px;line-height:1.65;max-height:125px;overflow:auto;margin-top:9px}.log div{padding:2px 0;border-bottom:1px solid #1b2a40}
+.capital-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}.capital-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}.capital-card label{display:block;color:var(--muted);font-size:11px;margin-bottom:6px}.capital-card input{font-size:16px;font-weight:700}.capital-result{font-size:20px;font-weight:850;margin-top:8px}
+.footer{font-size:11px;color:#7889a5;line-height:1.5;padding:12px 3px}
+@media(max-width:760px){.wrap{padding:10px}.controls{grid-template-columns:1fr 1fr}.controls input{grid-column:1/-1}.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.chartbox{height:360px}.two-col{grid-template-columns:1fr}.chart-title{font-size:15px}}
+
+/* V4.8 Advanced Appearance Customization */
+.appearance-panel{margin-top:10px;background:linear-gradient(180deg,var(--panel),var(--panel2))}
+.appearance-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:850;margin-bottom:10px}
+.appearance-grid{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:9px}
+.appearance-grid label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+.appearance-grid input[type="color"]{height:42px;padding:4px;border-radius:9px;background:#0a1425}
+.appearance-grid input[type="range"]{padding:0;height:34px;accent-color:var(--blue)}
+.theme-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.theme-row button{width:auto;min-width:110px;padding:9px 12px}
+.custom-note{font-size:11px;color:var(--muted);margin-top:8px}
+@media(max-width:760px){.appearance-grid{grid-template-columns:1fr 1fr}}
+
+@media(max-width:430px){.panel{padding:10px}.chartbox{height:320px}.zone-grid{grid-template-columns:1fr}.metrics{gap:6px}.card{padding:9px}.value{font-size:16px}.capital-grid{grid-template-columns:1fr 1fr}.capital-card:last-child{grid-column:1/-1}.chart-actions button{min-width:57px;padding:8px}.sub{font-size:12px}}
+
+.pressure-panel{margin-top:11px;padding:12px}
+.pressure-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.countdown{font-size:13px;font-weight:800;color:#ffd45e;background:#332b13;border:1px solid #786326;border-radius:9px;padding:7px 10px}
+.pressure-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pressure-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.pressure-title{font-size:14px;font-weight:850;margin-bottom:5px}
+.pressure-sub{font-size:11px;color:var(--muted);margin-bottom:5px}
+.pressure-canvas{height:155px;position:relative;width:100%}
+.pressure-canvas canvas{width:100%;height:100%;display:block}
+@media(max-width:600px){.pressure-grid{grid-template-columns:1fr}.pressure-canvas{height:135px}.pressure-head{align-items:flex-start}}
+
+
+.settings-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.settings-grid label{font-size:12px;color:var(--muted);display:block}
+.settings-grid input{display:block;margin-top:5px}
+.settings-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
+.settings-checks label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--white)}
+.settings-checks input{width:18px;height:18px;min-width:18px;margin:0;accent-color:var(--blue)}
+@media(max-width:600px){.settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.settings-checks{grid-template-columns:1fr}}
+
+
+.api-panel{padding:10px 13px}
+.api-label{display:block;color:var(--muted);font-size:12px;margin:0 0 5px}
+.settings-panel{padding:12px 13px;background:linear-gradient(145deg,#10213a,#0d192d);border-color:#344d70}
+.settings-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.settings-heading .chart-title{font-size:17px}
+.text-toggle{width:auto;background:transparent;color:#dce8fa;padding:5px 8px;font-size:12px;border:0}
+.settings-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px}
+.settings-grid label{display:block;color:#c3d0e5;font-size:12px;min-width:0}
+.settings-grid input,.settings-grid select{display:block;width:100%;margin-top:5px;padding:10px 11px;background:#091529;border:1px solid #2a4264;border-radius:10px;color:#eef4ff;font-size:14px;min-height:40px}
+.settings-grid input[readonly]{color:#b9c8dc;background:#101e33}
+.settings-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 10px;margin-top:15px}
+.switch-label{display:flex;align-items:center;gap:9px;color:#e4ecf8;font-size:12px;min-width:0;cursor:pointer}
+.switch-label input{position:absolute;opacity:0;width:1px;height:1px}
+.switch{width:36px;height:20px;border-radius:20px;background:#43536b;position:relative;flex:0 0 36px;transition:.18s}
+.switch:after{content:"";position:absolute;width:14px;height:14px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.18s}
+.switch-label input:checked+.switch{background:#1475ff}
+.switch-label input:checked+.switch:after{transform:translateX(16px)}
+.settings-footer{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:10px;margin-top:17px;align-items:center}
+.settings-footer button{min-height:42px;padding:10px;font-size:13px;text-transform:none}
+.settings-footer .secondary-btn{background:#0b1729;border:1px solid #344966;color:#eaf1fc}
+.save-hint{font-size:11px;color:#d2deef;background:#0b1729;border:1px solid #293e5c;border-radius:9px;padding:12px 9px;text-align:center}
+.settings-bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.settings-bottom-row label{font-size:12px;color:var(--muted)}
+.settings-bottom-row select{margin-top:5px}
+.settings-bottom-row button{align-self:end;min-height:40px}
+#settingsBody[hidden]{display:none}
+@media(max-width:600px){.settings-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.settings-checks{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 8px}.settings-footer{grid-template-columns:1fr 1fr}.save-hint{grid-column:1/-1}.settings-bottom-row{grid-template-columns:1fr 1fr}}
+@media(max-width:360px){.settings-grid{grid-template-columns:1fr}.settings-checks{grid-template-columns:1fr}}
+
+
+.market-volume-panel{margin-top:11px;padding:12px}
+.market-volume-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.market-volume-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
+.market-volume-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.market-volume-card .mv-label{font-size:11px;color:var(--muted)}
+.market-volume-card .mv-value{font-size:18px;font-weight:850;margin-top:4px}
+.market-volume-canvas{height:230px;position:relative;width:100%}
+.market-volume-canvas canvas{width:100%;height:100%;display:block}
+.mv-green{color:#20d98b}.mv-red{color:#ff667a}.mv-blue{color:#4aa8ff}
+@media(max-width:600px){.market-volume-grid{grid-template-columns:1fr}.market-volume-canvas{height:210px}}
+
+
+/* AI HYBRID SIGNAL ENGINE */
+.ai-panel{margin-top:11px;padding:12px;background:linear-gradient(145deg,#111f38,#0b1425);border-color:#36537d}
+.ai-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.ai-title{font-size:17px;font-weight:900}.ai-badge{padding:7px 10px;border-radius:9px;background:#172a46;border:1px solid #34577f;font-size:12px;color:#9fd0ff}.ai-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}.ai-card{background:#091529;border:1px solid var(--line);border-radius:11px;padding:10px}.ai-card .ai-label{font-size:11px;color:var(--muted)}.ai-card .ai-value{font-size:18px;font-weight:900;margin-top:5px}.ai-decision{margin-top:10px;padding:12px;border-radius:11px;text-align:center;font-size:24px;font-weight:950;border:1px solid #36537d;background:#0a172a}.ai-reasons{margin-top:10px;background:#091529;border:1px solid var(--line);border-radius:11px;padding:10px;font-size:13px;line-height:1.75}.ai-reasons ul{margin:6px 0 0;padding-left:20px}.ai-recommend{margin-top:8px;font-size:12px;color:var(--muted)}.ai-buy{color:#20e49b}.ai-sell{color:#ff7185}.ai-wait{color:#ffdc62}.ai-risk-low{color:#20e49b}.ai-risk-medium{color:#ffdc62}.ai-risk-high{color:#ff7185}@media(max-width:700px){.ai-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* V4.9 TradingView-inspired Market Workspace */
+:root{--tvbar:#0b1220;--tvbar2:#111b2d;--tvborder:#263752}
+.tv-workspace{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:10px;margin-top:11px}
+.tv-chart-shell{background:var(--panel);border:1px solid var(--tvborder);border-radius:15px;overflow:hidden;min-width:0}
+.tv-toolbar{display:flex;align-items:center;gap:6px;padding:8px;border-bottom:1px solid var(--tvborder);background:var(--tvbar);overflow-x:auto;scrollbar-width:none}
+.tv-toolbar::-webkit-scrollbar{display:none}
+.tv-symbol{font-weight:900;white-space:nowrap;padding:7px 9px;border-right:1px solid var(--tvborder)}
+.tv-tool-btn{width:auto;min-width:42px;padding:7px 10px;font-size:12px;background:transparent;border:1px solid transparent;color:#cdd9eb;white-space:nowrap}
+.tv-tool-btn:hover,.tv-tool-btn.active{background:#172a46;border-color:#35557d;color:#fff}
+.tv-divider{width:1px;height:26px;background:var(--tvborder);flex:0 0 1px}
+.tv-chart-area{padding:8px}.tv-chart-area .chartbox{height:560px}
+.tv-side{display:flex;flex-direction:column;gap:10px}
+.tv-widget{background:var(--panel);border:1px solid var(--tvborder);border-radius:14px;padding:11px}
+.tv-widget-title{font-size:12px;font-weight:900;color:#bcd0ea;margin-bottom:9px}
+.tv-quote{font-size:28px;font-weight:950;letter-spacing:.02em}.tv-change{font-size:12px;margin-top:4px}
+.tv-stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(38,55,82,.65);font-size:12px}
+.tv-stat:last-child{border-bottom:0}.tv-stat span{color:var(--muted)}.tv-stat b{font-size:13px}
+.tv-bottom-dock{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+.tv-mini{background:var(--panel2);border:1px solid var(--tvborder);border-radius:12px;padding:10px}
+.tv-mini .label{font-size:10px}.tv-mini .value{font-size:18px}
+@media(max-width:900px){.tv-workspace{grid-template-columns:1fr}.tv-side{display:grid;grid-template-columns:repeat(3,1fr)}.tv-widget{min-width:0}.tv-chart-area .chartbox{height:480px}}
+@media(max-width:600px){.tv-chart-area .chartbox{height:420px}.tv-side{grid-template-columns:1fr}.tv-bottom-dock{grid-template-columns:1fr 1fr}.tv-toolbar{gap:3px;padding:6px}.tv-tool-btn{padding:6px 8px;min-width:38px}.tv-symbol{font-size:12px;padding:6px}.tv-chart-area{padding:4px}}
+
+
+/* V5.0 chart-first trading terminal layout */
+:root{--bg:#070d19;--panel:#0b1425;--panel2:#081222;--line:#263752;--tvbar:#080f1d}
+body{background:#050b16;color:#edf3ff}
+.wrap{max-width:1800px;padding:10px 14px}
+header{min-height:62px;margin-bottom:8px}
+header h1{font-size:clamp(18px,2vw,25px)}
+.tv-workspace{grid-template-columns:minmax(0,1fr) 292px;gap:9px;margin-top:8px}
+.tv-chart-shell{border-radius:12px;background:#070e1b}
+.tv-toolbar{min-height:55px;background:#080f1d;padding:7px 10px}
+.tv-symbol{font-size:18px;min-width:145px}
+.tv-chart-area{padding:8px 10px}
+.tv-chart-area .chartbox{height:470px!important}
+.tv-side{gap:8px}
+.tv-widget{border-radius:11px;background:#0b1526;padding:10px 12px}
+.tv-widget-title{font-size:12px;letter-spacing:.04em;color:#9fb2ce}
+.tv-quote{font-size:27px;color:#00d993}
+.tv-stat{padding:6px 0;font-size:12px}
+.signal-widget{background:linear-gradient(145deg,#071f1b,#0b1728);border-color:#087a58}
+.signal-hero{font-size:29px;font-weight:950;text-align:center;padding:10px 5px 5px}
+.signal-hero.buy{color:#00e69b}.signal-hero.sell{color:#ff6479}.signal-hero.wait{color:#ffd45e}
+.signal-strength{display:flex;justify-content:space-between;font-size:12px;margin:5px 0;color:#d6e4f7}
+.strength-track{height:8px;background:#1c2d40;border-radius:10px;overflow:hidden}
+.strength-track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#00a96d,#00e69b);border-radius:10px;transition:width .25s}
+.indicator-pane{height:105px;margin-top:7px;padding:6px 8px;background:#080f1d;border-top:1px solid #243650;border-radius:5px;position:relative}
+.indicator-pane canvas{width:100%;height:72px;display:block}
+.indicator-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#d9e6f8;margin-bottom:2px}
+.indicator-head span{color:#b88cff;font-weight:800}
+.macd-pane{height:112px}
+.macd-pane canvas{height:78px}
+.tv-bottom-dock{margin-top:8px}
+.tv-mini{background:#0b1526;border-color:#263752}
+.tv-mini .value{font-size:17px}
+.panel,.card{border-radius:11px}
+.panel{background:#0b1425}
+.api-panel,.settings-panel{margin-top:9px}
+.signal{margin-top:8px}
+.metrics{gap:7px}
+@media(max-width:900px){
+ .tv-workspace{grid-template-columns:1fr}
+ .tv-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .tv-chart-area .chartbox{height:390px!important}
+ .signal-widget{grid-column:1/-1}
+}
+@media(max-width:600px){
+ .wrap{padding:7px}
+ .tv-side{grid-template-columns:1fr}
+ .tv-chart-area .chartbox{height:330px!important}
+ .tv-symbol{min-width:auto;font-size:14px}
+ .tv-toolbar{gap:2px}
+ .indicator-pane{height:95px}
+ .indicator-pane canvas{height:63px}
+ .macd-pane{height:100px}
+ .macd-pane canvas{height:67px}
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div><h1>🟡 XAU/USD Market Dashboard V5.1 TradingView Live</h1><div class="sub">Candlestick • EMA 9/21 • RSI 14 • ATR 14 • Supply &amp; Demand • 15m + 1H Confirmation</div></div>
+ <div id="status" class="status">● READY</div>
+</header>
+
+<section class="tv-workspace">
+  <div class="tv-chart-shell">
+    <div class="tv-toolbar">
+      <div class="tv-symbol">🟡 XAUUSD</div>
+      <button class="tv-tool-btn tf-btn" data-tf="1min">1m</button>
+      <button class="tv-tool-btn tf-btn" data-tf="5min">5m</button>
+      <button class="tv-tool-btn tf-btn active" data-tf="15min">15m</button>
+      <button class="tv-tool-btn tf-btn" data-tf="1h">1H</button>
+      <button class="tv-tool-btn tf-btn" data-tf="4h">4H</button>
+      <div class="tv-divider"></div>
+      <button class="tv-tool-btn" id="tvEma">EMA</button>
+      <button class="tv-tool-btn" id="tvVolume">VOL</button>
+      <button class="tv-tool-btn" id="tvGrid">GRID</button>
+      <div class="tv-divider"></div>
+      <button class="tv-tool-btn" id="zoomIn">＋</button>
+      <button class="tv-tool-btn" id="zoomOut">－</button>
+      <button class="tv-tool-btn" id="resetZoom">Reset</button>
+    </div>
+    <div class="tv-chart-area">
+      <div class="note">Candles • EMA • Supply/Demand • Volume • Scroll/pinch to zoom • Drag to pan</div>
+      <div class="chartbox"><canvas id="chart"></canvas></div>
+<div class="indicator-pane"><div class="indicator-head"><b>RSI (14)</b><span id="rsiPaneValue">—</span></div><canvas id="rsiPane"></canvas></div>
+<div class="indicator-pane macd-pane"><div class="indicator-head"><b>MACD (12, 26, 9)</b><span id="macdPaneValue">—</span></div><canvas id="macdPane"></canvas></div>
+    </div>
+  </div>
+  <aside class="tv-side">
+    <div class="tv-widget signal-widget">
+      <div class="tv-widget-title">LIVE TRADE SIGNAL</div>
+      <div id="tvSignalHero" class="signal-hero wait">● WAIT</div>
+      <div class="signal-strength"><span>Signal strength</span><b id="tvStrength">—</b></div>
+      <div class="strength-track"><i id="tvStrengthBar"></i></div>
+    </div>
+    <div class="tv-widget">
+      <div class="tv-widget-title">XAU/USD — LIVE PRICE</div>
+      <div id="tvPrice" class="tv-quote">—</div>
+      <div id="tvTrend" class="tv-change">WAITING FOR DATA</div>
+    </div>
+    <div class="tv-widget">
+      <div class="tv-widget-title">TECHNICAL SUMMARY</div>
+      <div class="tv-stat"><span>Signal</span><b id="tvSignal">WAIT</b></div>
+      <div class="tv-stat"><span>RSI</span><b id="tvRsi">—</b></div>
+      <div class="tv-stat"><span>EMA Trend</span><b id="tvEmaTrend">—</b></div>
+      <div class="tv-stat"><span>ATR</span><b id="tvAtr">—</b></div>
+    </div>
+    <div class="tv-widget">
+      <div class="tv-widget-title">MARKET SUMMARY</div>
+      <div class="tv-stat"><span>Trend</span><b id="tvMarketTrend">—</b></div>
+      <div class="tv-stat"><span>EMA Fast</span><b id="tvFastEma">—</b></div>
+      <div class="tv-stat"><span>EMA Slow</span><b id="tvSlowEma">—</b></div>
+      <div class="tv-stat"><span>ATR (14)</span><b id="tvAtrSummary">—</b></div>
+    </div>
+    <div class="tv-widget">
+      <div class="tv-widget-title">TRADE LEVELS</div>
+      <div class="tv-stat"><span>Entry</span><b id="tvEntry">—</b></div>
+      <div class="tv-stat"><span>Stop Loss</span><b id="tvSl">—</b></div>
+      <div class="tv-stat"><span>TP 1</span><b id="tvTp1">—</b></div>
+      <div class="tv-stat"><span>TP 2</span><b id="tvTp2">—</b></div>
+    </div>
+  </aside>
+</section>
+
+
+
+<!-- LIVE TRADINGVIEW CHART: placed directly below the Market workspace -->
+<style>
+.tradingview-live-panel{margin-top:11px;padding:12px;background:#0b1425;border:1px solid #263752;border-radius:12px;overflow:hidden}
+.tradingview-live-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+.tradingview-live-title{font-size:16px;font-weight:900;color:#edf3ff}
+.tradingview-live-tag{font-size:11px;color:#35e5a2;background:#062c21;border:1px solid #087b53;border-radius:20px;padding:6px 10px}
+.tradingview-live-frame{height:520px;width:100%;overflow:hidden;border-radius:9px;background:#070e1b}
+.tradingview-live-frame .tradingview-widget-container,.tradingview-live-frame .tradingview-widget-container__widget{height:100%;width:100%}
+.tradingview-live-note{font-size:11px;color:#9aa9c2;line-height:1.5;margin-top:8px}
+@media(max-width:600px){.tradingview-live-panel{padding:9px}.tradingview-live-frame{height:470px}.tradingview-live-title{font-size:14px}}
+</style>
+<section id="tradingviewLivePanel" class="tradingview-live-panel">
+  <div class="tradingview-live-head">
+    <div class="tradingview-live-title">📈 TRADINGVIEW — LIVE XAU/USD CHART</div>
+    <div class="tradingview-live-tag">● LIVE MARKET WIDGET</div>
+  </div>
+  <div class="tradingview-live-frame">
+    <div class="tradingview-widget-container" style="height:100%;width:100%">
+      <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+      <div class="tradingview-widget-copyright" style="height:32px;line-height:32px;text-align:center;font-size:11px;color:#9aa9c2">
+        <a href="https://www.tradingview.com/symbols/XAUUSD/" rel="noopener nofollow" target="_blank" style="color:#9aa9c2">View XAU/USD on TradingView</a>
+      </div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+      {
+        "autosize": true,
+        "symbol": "OANDA:XAUUSD",
+        "interval": "15",
+        "timezone": "Asia/Phnom_Penh",
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "allow_symbol_change": true,
+        "calendar": false,
+        "details": true,
+        "hide_side_toolbar": false,
+        "hide_top_toolbar": false,
+        "hide_legend": false,
+        "hide_volume": false,
+        "save_image": true,
+        "withdateranges": true,
+        "backgroundColor": "#0b1425",
+        "gridColor": "rgba(38,55,82,0.6)",
+        "studies": ["STD;EMA"]
+      }
+      </script>
+    </div>
+  </div>
+  <div class="tradingview-live-note">ក្រាហ្វ TradingView ខាងលើជាក្រាហ្វបន្ថែមសម្រាប់មើលទីផ្សារ។ ទិន្នន័យ/តម្លៃអាចខុសពី feed របស់ Twelve Data នៅក្នុង Dashboard ដោយសារប្រភពទិន្នន័យផ្សេងគ្នា។</div>
+</section>
+
+
+<section class="panel api-panel">
+ <label class="api-label" for="apiKey">Twelve Data API Key</label>
+ <input id="apiKey" type="password" autocomplete="off" placeholder="Enter Twelve Data API Key">
+ <div class="note">API Key រក្សាទុកតែក្នុង Browser នេះ។ ត្រូវការអ៊ីនធឺណិត និងសិទ្ធិទាញទិន្នន័យ XAU/USD។</div>
+</section>
+<section id="settingsPanel" class="panel settings-panel">
+ <div class="settings-heading">
+  <div class="chart-title">⚙ SETTINGS</div>
+  <button id="settingsToggle" type="button" class="text-toggle">▾ Hide Settings</button>
+ </div>
+ <div id="settingsBody">
+  <div class="settings-grid">
+   <label>Timeframe<select id="interval"><option value="1min">1 minute</option><option value="5min">5 minutes</option><option value="15min" selected>15 minutes</option><option value="1h">1 hour</option><option value="4h">4 hours</option></select></label>
+   <label>Candle Limit<select id="bars"><option value="100">100 candles</option><option value="200" selected>200 candles</option><option value="300">300 candles</option></select></label>
+   <label>Chart Height<select id="setChartHeight"><option value="320">320 px</option><option value="360">360 px</option><option value="400">400 px</option><option value="430" selected>430 px</option><option value="500">500 px</option><option value="600">600 px</option><option value="700">700 px</option></select></label>
+   <label>EMA Fast<input id="setEmaFast" type="number" min="2" max="200" value="9"></label>
+   <label>EMA Slow<input id="setEmaSlow" type="number" min="3" max="300" value="21"></label>
+   <label>RSI Period<input id="setRsi" type="number" min="2" max="100" value="14"></label>
+   <label>ATR Period<input id="setAtr" type="number" min="2" max="100" value="14"></label>
+   <label>Stop Loss (ATR Mult)<input id="setSlAtr" type="number" min="0.2" max="10" step="0.1" value="1.5"></label>
+   <label>Signal Score<input id="setSignalScore" type="text" value="—" readonly></label>
+  </div>
+  <div class="settings-checks">
+   <label class="switch-label"><input id="setShowEma" type="checkbox" checked><span class="switch"></span> Show EMA</label>
+   <label class="switch-label"><input id="setShowZones" type="checkbox" checked><span class="switch"></span> Show S&amp;D</label>
+   <label class="switch-label"><input id="setShowVolume" type="checkbox" checked><span class="switch"></span> Show Volume</label>
+   <label class="switch-label"><input id="setShowMarkers" type="checkbox" checked><span class="switch"></span> Show Buy/Sell Markers</label>
+   <label class="switch-label"><input id="setShowPressure" type="checkbox" checked><span class="switch"></span> Show Buyers/Sellers</label>
+  </div>
+
+  <section class="panel appearance-panel">
+   <div class="appearance-title"><span>🎨 APPEARANCE & CHART CUSTOMIZATION</span><span class="label">Live Preview</span></div>
+   <div class="appearance-grid">
+    <label>Bullish Candle<input id="colorBull" type="color" value="#00d084"></label>
+    <label>Bearish Candle<input id="colorBear" type="color" value="#ff5368"></label>
+    <label>EMA Fast Color<input id="colorEmaFast" type="color" value="#42a5ff"></label>
+    <label>EMA Slow Color<input id="colorEmaSlow" type="color" value="#ffb35c"></label>
+    <label>Demand Zone<input id="colorDemand" type="color" value="#00d084"></label>
+    <label>Supply Zone<input id="colorSupply" type="color" value="#ff5368"></label>
+    <label>Volume Color<input id="colorVolume" type="color" value="#ffd45e"></label>
+    <label>Background<input id="colorBg" type="color" value="#070d19"></label>
+    <label>Panel Color<input id="colorPanel" type="color" value="#101b2e"></label>
+    <label>Accent / Button<input id="colorAccent" type="color" value="#246df0"></label>
+    <label>Text Size <input id="fontSize" type="range" min="12" max="22" value="16"><span id="fontSizeValue">16 px</span></label>
+    <label>EMA Thickness <input id="emaWidth" type="range" min="1" max="6" value="2"><span id="emaWidthValue">2 px</span></label>
+    <label>Candle Size <input id="candleScale" type="range" min="60" max="150" value="100"><span id="candleScaleValue">100%</span></label>
+    <label>Card Radius <input id="cardRadius" type="range" min="6" max="24" value="15"><span id="cardRadiusValue">15 px</span></label>
+   </div>
+   <div class="settings-checks" style="margin-top:10px">
+    <label class="switch-label"><input id="setShowGrid" type="checkbox" checked><span class="switch"></span> Show Chart Grid</label>
+    <label class="switch-label"><input id="setShowPriceLabels" type="checkbox" checked><span class="switch"></span> Show Price Labels</label>
+    <label class="switch-label"><input id="setCompactMode" type="checkbox"><span class="switch"></span> Compact Mode</label>
+   </div>
+   <div class="theme-row">
+    <button type="button" id="themeDark">🌙 Dark Theme</button>
+    <button type="button" id="themeLight" class="secondary-btn">☀ Light Theme</button>
+    <button type="button" id="themeReset" class="secondary-btn">↺ Default Colors</button>
+   </div>
+   <div class="custom-note">ការកែពណ៌ និងទំហំអាច Preview ភ្លាមៗ ហើយ Save Settings ដើម្បីរក្សាទុកក្នុង Browser។</div>
+  </section>
+
+  <div class="settings-footer">
+   <button id="saveSettings" type="button">▣ Save Settings</button>
+   <button id="resetSettings" type="button" class="secondary-btn">⟳ Reset</button>
+   <div class="save-hint">ℹ Settings are saved in your browser</div>
+  </div>
+  <div class="settings-bottom-row">
+   <label>Auto Refresh<select id="refresh"><option value="0">Manual</option><option value="30000">30 seconds</option><option value="60000" selected>1 minute</option><option value="300000">5 minutes</option></select></label>
+   <button id="run" type="button">▶ UPDATE</button>
+  </div>
+ </div>
+</section>
+
+<div id="signal" class="signal wait">🟡 WAIT — រង់ចាំទិន្នន័យ</div>
+<section class="metrics">
+ <div class="card"><div class="label">ENTRY / LAST PRICE</div><div id="entry" class="value">—</div></div>
+ <div class="card"><div class="label">STOP LOSS</div><div id="sl" class="value">—</div></div>
+ <div class="card"><div class="label">TAKE PROFIT 1</div><div id="tp1" class="value">—</div></div>
+ <div class="card"><div class="label">TAKE PROFIT 2</div><div id="tp2" class="value">—</div></div>
+ <div class="card"><div class="label">TAKE PROFIT 3</div><div id="tp3" class="value">—</div></div>
+ <div class="card"><div class="label">SIGNAL SCORE</div><div id="strength" class="value">—</div></div>
+</section>
+
+<section class="panel">
+ <div class="metrics" style="margin-top:0">
+  <div class="card"><div class="label">PRICE</div><div id="price" class="value">—</div></div>
+  <div class="card"><div class="label">EMA 9</div><div id="ema9" class="value">—</div></div>
+  <div class="card"><div class="label">EMA 21</div><div id="ema21" class="value">—</div></div>
+  <div class="card"><div class="label">RSI 14</div><div id="rsi" class="value">—</div></div>
+  <div class="card"><div class="label">ATR 14</div><div id="atr" class="value">—</div></div>
+  <div class="card"><div class="label">15M / 1H</div><div id="confirm" class="value">—</div></div>
+ </div>
+</section>
+
+<section class="panel ai-panel">
+  <div class="ai-head">
+   <div class="ai-title">🤖 AI HYBRID SIGNAL ENGINE</div>
+   <div class="ai-badge">Technical + Multi-Timeframe Confirmation</div>
+  </div>
+  <div class="ai-grid">
+   <div class="ai-card"><div class="ai-label">AI CONFIDENCE</div><div id="aiConfidence" class="ai-value">—</div></div>
+   <div class="ai-card"><div class="ai-label">MARKET BIAS</div><div id="aiBias" class="ai-value">—</div></div>
+   <div class="ai-card"><div class="ai-label">RISK LEVEL</div><div id="aiRisk" class="ai-value">—</div></div>
+   <div class="ai-card"><div class="ai-label">AI SCORE</div><div id="aiScore" class="ai-value">—</div></div>
+  </div>
+  <div id="aiDecision" class="ai-decision ai-wait">🤖 AI HYBRID: ● WAIT — NO CLEAR SETUP</div>
+  <div class="ai-reasons"><b>AI Analysis</b><ul id="aiReasons"><li>Waiting for market data…</li></ul></div>
+  <div id="aiRecommend" class="ai-recommend">AI Recommendation: Waiting for data.</div>
+</section>
+
+
+
+<section class="tv-bottom-dock">
+  <div class="tv-mini"><div class="label">TECHNICAL TREND</div><div id="dockTrend" class="value">—</div></div>
+  <div class="tv-mini"><div class="label">MOMENTUM / RSI</div><div id="dockMomentum" class="value">—</div></div>
+  <div class="tv-mini"><div class="label">VOLATILITY</div><div id="dockVolatility" class="value">—</div></div>
+</section>
+<section class="panel pressure-panel">
+ <div class="pressure-head">
+  <div class="chart-title">📊 BUYERS / SELLERS &amp; BEARISHNESS</div>
+  <div class="countdown">NEXT CANDLE <span id="nextCandle">--:--</span></div>
+ </div>
+ <div class="pressure-grid">
+  <div class="pressure-card">
+   <div class="pressure-title"><span style="color:#39df52">●</span> BUYERS / <span style="color:#ff5368">SELLERS</span></div>
+   <div class="pressure-sub">Estimated candle pressure • Green = bullish / Red = bearish</div>
+   <div class="pressure-canvas"><canvas id="buyersSellersChart"></canvas></div>
+  </div>
+  <div class="pressure-card">
+   <div class="pressure-title"><span style="color:#299cff">●</span> BEARISHNESS</div>
+   <div class="pressure-sub">Estimated downside pressure • Below zero = bearish</div>
+   <div class="pressure-canvas"><canvas id="bearishnessChart"></canvas></div>
+  </div>
+ </div>
+ <div class="note">សូចនាករទាំងនេះគណនាប៉ាន់ស្មានពី OHLC និង Volume របស់ទៀន មិនមែនទិន្នន័យ Order Flow ឬ Buy/Sell Volume ពិតប្រាកដទេ។</div>
+</section>
+
+<section class="panel market-volume-panel">
+ <div class="market-volume-head">
+  <div class="chart-title">📊 GOLD VOLUME &amp; USD MARKET IMPACT</div>
+  <div class="note">Gold activity • USD pressure proxy • Market direction</div>
+ </div>
+ <div class="market-volume-grid">
+  <div class="market-volume-card"><div class="mv-label">GOLD VOLUME TREND</div><div id="goldVolumeTrend" class="mv-value">WAITING…</div></div>
+  <div class="market-volume-card"><div class="mv-label">USD MARKET IMPACT</div><div id="usdImpact" class="mv-value">WAITING…</div></div>
+  <div class="market-volume-card"><div class="mv-label">MARKET PRESSURE</div><div id="marketPressure" class="mv-value">WAITING…</div></div>
+ </div>
+ <div class="market-volume-canvas"><canvas id="marketVolumeChart"></canvas></div>
+ <div class="note">🟢 Green/Red = Gold candle volume • 🔵/🟡 = estimated USD pressure. USD values are calculated from XAU/USD movement and are not live DXY data.</div>
+</section>
+
+<section class="two-col">
+ <div class="panel" style="margin-top:0">
+  <div class="chart-title">🧭 SUPPLY &amp; DEMAND ZONES</div>
+  <div class="zone-grid" style="margin-top:9px">
+   <div class="zone"><b class="supply">🔴 SUPPLY ZONE</b><span id="supplyInfo">Waiting for data…</span></div>
+   <div class="zone"><b class="demand">🟢 DEMAND ZONE</b><span id="demandInfo">Waiting for data…</span></div>
+  </div>
+ </div>
+ <div class="panel" style="margin-top:0">
+  <div class="chart-title">📊 MARKET ANALYSIS</div>
+  <div class="analysis-line">Trend: <b id="trend">—</b></div>
+  <div class="analysis-line">Momentum: <b id="momentum">—</b></div>
+  <div class="analysis-line">Volatility: <b id="volatility">—</b></div>
+  <div class="note">ការវិភាគបច្ចេកទេសសម្រាប់ជាជំនួយសិក្សា មិនមែនជាការធានាលទ្ធផលទីផ្សារទេ។</div>
+ </div>
+</section>
+
+<section class="two-col">
+ <div class="panel" style="margin-top:0">
+  <div class="chart-title">💰 CAPITAL MANAGEMENT</div>
+  <div class="note">គណនាទឹកប្រាក់ Risk តាមទុន និងភាគរយដែលបញ្ចូល។</div>
+  <div class="capital-grid">
+   <div class="capital-card"><label for="capital">CAPITAL (USD)</label><input id="capital" type="number" min="0" step="0.01" value="1000"></div>
+   <div class="capital-card"><label for="riskPct">RISK (%)</label><input id="riskPct" type="number" min="0" max="100" step="0.1" value="1"></div>
+   <div class="capital-card"><label>RISK AMOUNT</label><div id="riskAmount" class="capital-result">$10.00</div></div>
+  </div>
+ </div>
+ <div class="panel" style="margin-top:0">
+  <div class="chart-title">🔔 ALERT</div>
+  <div class="tool-buttons"><button id="soundBtn">🔊 Enable Sound</button><button id="testBtn">⚡ Test Alert</button></div>
+  <div id="log" class="log"><div class="warn">Dashboard ready. Enter API Key and press UPDATE.</div></div>
+ </div>
+</section>
+<div class="footer">XAU/USD Market Dashboard V5.1 TradingView Live • Data provided by Twelve Data • Indicator calculations are estimates based on returned candles. Always verify market data independently.</div>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+let chart=null,timer=null,audioCtx=null,lastSignal="WAIT",lastBarTime=null,updating=false;
+const DEFAULT_SETTINGS={
+ emaFast:9,emaSlow:21,rsiPeriod:14,atrPeriod:14,chartHeight:430,slAtr:1.5,
+ showEma:true,showZones:true,showVolume:true,showMarkers:true,showPressure:true,
+ showGrid:true,showPriceLabels:true,compactMode:false,
+ colorBull:"#00d084",colorBear:"#ff5368",colorEmaFast:"#42a5ff",colorEmaSlow:"#ffb35c",
+ colorDemand:"#00d084",colorSupply:"#ff5368",colorVolume:"#ffd45e",
+ colorBg:"#070d19",colorPanel:"#101b2e",colorAccent:"#246df0",
+ fontSize:16,emaWidth:2,candleScale:100,cardRadius:15
+};
+let appSettings={...DEFAULT_SETTINGS};
+try{const saved=JSON.parse(localStorage.getItem("xauDashboardSettingsV43")||"{}");appSettings={...DEFAULT_SETTINGS,...saved};}catch(e){}
+let uiSettings={interval:"15min",bars:"200",refresh:"60000"};
+try{uiSettings={...uiSettings,...JSON.parse(localStorage.getItem("xauDashboardUiV43")||"{}")};}catch(e){}
+
+const fmt=n=>Number.isFinite(n)?n.toFixed(2):"—";
+function log(msg,cls=""){const d=document.createElement("div");d.className=cls;d.textContent=new Date().toLocaleTimeString()+" — "+msg;$("log").prepend(d);}
+function setStatus(text,cls=""){const e=$("status");e.textContent=text;e.className="status "+cls;}
+function ema(a,p){const k=2/(p+1),out=[];let v=a[0];for(let i=0;i<a.length;i++){if(i)v=a[i]*k+v*(1-k);out.push(v);}return out;}
+function rsi(a,p=14){const out=Array(a.length).fill(null);let g=0,l=0;for(let i=1;i<a.length;i++){const d=a[i]-a[i-1];if(i<=p){g+=Math.max(d,0);l+=Math.max(-d,0);if(i===p){g/=p;l/=p;out[i]=l===0?100:100-100/(1+g/l);}}else{g=(g*(p-1)+Math.max(d,0))/p;l=(l*(p-1)+Math.max(-d,0))/p;out[i]=l===0?100:100-100/(1+g/l);}}return out;}
+function atr(b,p=14){const tr=b.map((x,i)=>i?Math.max(x.high-x.low,Math.abs(x.high-b[i-1].close),Math.abs(x.low-b[i-1].close)):x.high-x.low);const out=Array(b.length).fill(null);let v=0;for(let i=0;i<tr.length;i++){if(i<p){v+=tr[i];if(i===p-1)out[i]=v/p;}else{v=(v*(p-1)+tr[i])/p;out[i]=v;}}return out;}
+function calcSignal(b){const c=b.map(x=>x.close),E9=ema(c,appSettings.emaFast),E21=ema(c,appSettings.emaSlow),R=rsi(c,appSettings.rsiPeriod),A=atr(b,appSettings.atrPeriod),i=b.length-1;let score=0;if(c[i]>E9[i])score++;else score--;if(E9[i]>E21[i])score++;else score--;if(R[i]>=52)score++;else if(R[i]<=48)score--;if(c[i]>c[i-1])score++;else if(c[i]<c[i-1])score--;return{sig:score>=3?"BUY":score<=-3?"SELL":"WAIT",score,c:c[i],e9:E9[i],e21:E21[i],rsi:R[i],atr:A[i],E9,E21,R,A};}
+async function getData(interval,count){
+ const key=$("apiKey").value.trim();if(!key)throw Error("សូមបញ្ចូល Twelve Data API Key ជាមុនសិន។");
+ const url="https://api.twelvedata.com/time_series?symbol=XAU%2FUSD&interval="+encodeURIComponent(interval)+"&outputsize="+count+"&apikey="+encodeURIComponent(key);
+ const res=await fetch(url);if(!res.ok)throw Error("Network error: HTTP "+res.status);
+ const j=await res.json();if(j.status==="error"||!Array.isArray(j.values))throw Error(j.message||"API មិនបានផ្តល់ candle data។ ពិនិត្យ API Key និងសិទ្ធិ XAU/USD។");
+ const rows=j.values.slice().reverse().map(x=>({time:new Date(x.datetime.replace(" ","T")+"Z").getTime(),open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close),volume:Number(x.volume)||0})).filter(x=>Number.isFinite(x.time)&&[x.open,x.high,x.low,x.close].every(Number.isFinite));
+ if(rows.length<30)throw Error("ទិន្នន័យមិនគ្រប់គ្រាន់។ សាកល្បងបន្ថែមចំនួន candles ឬ interval ផ្សេង។");
+ return rows;
+}
+function findZones(b){const zones={supply:[],demand:[]},start=Math.max(3,b.length-100);for(let i=start;i<b.length-3;i++){const c=b[i],left=b.slice(i-3,i),right=b.slice(i+1,i+4),top=Math.max(c.open,c.close),bottom=Math.min(c.open,c.close);if(left.every(x=>c.high>=x.high)&&right.every(x=>c.high>=x.high)&&c.high>top)zones.supply.push({low:top,high:c.high,index:i});if(left.every(x=>c.low<=x.low)&&right.every(x=>c.low<=x.low)&&bottom>c.low)zones.demand.push({low:c.low,high:bottom,index:i});}const clean=a=>{const out=[];for(const z of a.sort((x,y)=>y.index-x.index)){if(!out.some(q=>z.low<=q.high&&z.high>=q.low))out.push(z);if(out.length===2)break;}return out;};return{supply:clean(zones.supply),demand:clean(zones.demand)};}
+const candlePainter={id:"marketCandles",beforeDatasetsDraw(ch){const d=ch.$marketData;if(!d)return;const{ctx,chartArea,scales}=ch;if(!chartArea||!scales.x||!scales.y)return;const xs=scales.x,ys=scales.y,area=chartArea,step=d.bars.length>1?Math.abs(xs.getPixelForValue(1)-xs.getPixelForValue(0)):8,w=Math.max(2,Math.min(11,step*.62));ctx.save();
+ // Supply/demand bands
+ const paint=(list,color,label)=>list.forEach((z,i)=>{const y1=ys.getPixelForValue(z.high),y2=ys.getPixelForValue(z.low);ctx.fillStyle=color;ctx.fillRect(area.left,Math.min(y1,y2),area.right-area.left,Math.max(2,Math.abs(y2-y1)));ctx.fillStyle=label==="SUPPLY"?"#ff8493":"#54e5a7";ctx.font="bold 10px Arial";ctx.fillText(label+" "+(i+1),area.left+7,Math.max(area.top+11,Math.min(y1,y2)+11));});
+ if(appSettings.showZones){paint(d.zones.supply,"rgba(255,83,104,.12)","SUPPLY");paint(d.zones.demand,"rgba(0,208,132,.12)","DEMAND");}
+ // Volume bars
+ const maxV=Math.max(1,...d.bars.map(x=>x.volume)),volH=Math.min(42,area.height*.14),base=area.bottom-2;
+ if(appSettings.showVolume)d.bars.forEach((b,i)=>{const x=xs.getPixelForValue(i),h=(b.volume/maxV)*volH;ctx.fillStyle=b.close>=b.open?"rgba(0,208,132,.48)":"rgba(255,83,104,.48)";ctx.fillRect(x-w/2,base-h,w,h);});
+ // Candle bodies and wicks
+ d.bars.forEach((b,i)=>{const x=xs.getPixelForValue(i),up=b.close>=b.open,col=up?"#00d084":"#ff5368",yo=ys.getPixelForValue(b.open),yc=ys.getPixelForValue(b.close),yh=ys.getPixelForValue(b.high),yl=ys.getPixelForValue(b.low);ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,yh);ctx.lineTo(x,yl);ctx.stroke();const top=Math.min(yo,yc),height=Math.max(1.5,Math.abs(yc-yo));ctx.fillRect(x-w/2,top,w,height);});
+ // EMA curves
+ const drawLine=(arr,color)=>{ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.8;let started=false;arr.forEach((v,i)=>{if(!Number.isFinite(v))return;const x=xs.getPixelForValue(i),y=ys.getPixelForValue(v);if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);});ctx.stroke();};
+ if(appSettings.showEma){drawLine(d.ind.E9,"#38a5ff");drawLine(d.ind.E21,"#ffad55");}
+ // BUY / SELL markers only for actual historical conditions
+ if(appSettings.showMarkers)d.signals.forEach((sig,i)=>{if(!sig)return;const b=d.bars[i],x=xs.getPixelForValue(i),y=ys.getPixelForValue(sig==="BUY"?b.low:b.high);ctx.fillStyle=sig==="BUY"?"#ffd45e":"#45d6c5";ctx.beginPath();if(sig==="BUY"){ctx.moveTo(x,y+9);ctx.lineTo(x-5,y+17);ctx.lineTo(x+5,y+17);}else{ctx.moveTo(x,y-9);ctx.lineTo(x-5,y-17);ctx.lineTo(x+5,y-17);}ctx.closePath();ctx.fill();});
+ ctx.restore();}};
+function makeChart(b,ind,signals,zones){document.querySelector(".chartbox").style.height=appSettings.chartHeight+"px";const labels=b.map(x=>new Date(x.time).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}));const min=Math.min(...b.map(x=>x.low)),max=Math.max(...b.map(x=>x.high)),pad=(max-min)*.08||1;if(chart)chart.destroy();const ctx=$("chart").getContext("2d");chart=new Chart(ctx,{type:"line",data:{labels,datasets:[]},plugins:[candlePainter],options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{enabled:false},zoom:{pan:{enabled:true,mode:"x"},zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"x"}}},layout:{padding:{top:8,right:8,bottom:4,left:2}},scales:{x:{type:"category",ticks:{color:"#9aa9c2",maxTicksLimit:7,maxRotation:0,autoSkip:true},grid:{display:appSettings.showGrid,color:"rgba(120,145,180,.08)"}},y:{min:min-pad,max:max+pad,position:"right",ticks:{display:appSettings.showPriceLabels,color:"#b8c6dc",maxTicksLimit:8,callback:v=>Number(v).toLocaleString(undefined,{maximumFractionDigits:2})},grid:{display:appSettings.showGrid,color:"rgba(120,145,180,.12)"}}}}});chart.$marketData={bars:b,ind,zones,signals};chart.update("none");}
+function zoneText(list){return list.length?list.map((z,i)=>"#"+(i+1)+" "+fmt(z.low)+" – "+fmt(z.high)).join("<br>"):"No confirmed zone";}
+
+function drawHistogram(canvasId,values,colorFn,maxAbs,zeroAtBottom=false){
+ const canvas=$(canvasId);if(!canvas)return;
+ const rect=canvas.getBoundingClientRect(),w=Math.max(240,rect.width),h=Math.max(100,rect.height),dpr=window.devicePixelRatio||1;
+ canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+ const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+ const left=8,right=34,top=8,bottom=22,plotW=w-left-right,plotH=h-top-bottom,n=values.length;
+ if(!n)return;
+ const zeroY=zeroAtBottom?top+plotH:top+plotH*.12;
+ ctx.strokeStyle="rgba(145,165,195,.16)";ctx.lineWidth=1;
+ for(let i=0;i<4;i++){const y=top+i*plotH/3;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();}
+ ctx.strokeStyle="rgba(180,195,215,.35)";ctx.beginPath();ctx.moveTo(left,zeroY);ctx.lineTo(w-right,zeroY);ctx.stroke();
+ const gap=2,bw=Math.max(1,(plotW-gap*(n-1))/n);
+ values.forEach((v,i)=>{const x=left+i*(plotW/n),mag=Math.min(1,Math.abs(v)/maxAbs),barH=mag*(zeroAtBottom?plotH*.88:plotH*.82),y=v>=0?zeroY-barH:zeroY;ctx.fillStyle=colorFn(v);ctx.fillRect(x,y,Math.max(1,bw),Math.max(1,barH));});
+ ctx.fillStyle="#9aa9c2";ctx.font="10px Arial";ctx.textAlign="right";
+ ctx.fillText(zeroAtBottom?maxAbs.toFixed(0):"+"+maxAbs.toFixed(0),w-3,top+8);ctx.fillText("0",w-3,zeroY+3);
+ ctx.textAlign="left";ctx.fillText("Older",left,h-5);ctx.textAlign="right";ctx.fillText("Latest",w-right,h-5);
+}
+function renderPressure(b){
+ const pressurePanel=document.querySelector(".pressure-panel");if(pressurePanel)pressurePanel.hidden=!appSettings.showPressure;if(!appSettings.showPressure)return;
+ const recent=b.slice(-90),ranges=recent.map(x=>Math.max(.000001,x.high-x.low)),avgRange=ranges.reduce((a,v)=>a+v,0)/Math.max(1,ranges.length);
+ const avgVol=recent.reduce((a,x)=>a+(x.volume||0),0)/Math.max(1,recent.length)||1;
+ const buyerSeller=recent.map(x=>{const range=Math.max(.000001,x.high-x.low),body=(x.close-x.open)/range,vol=x.volume>0?Math.min(1.5,Math.sqrt(x.volume/avgVol)):1;return Math.max(-4,Math.min(4,body*3.2*vol));});
+ const bearish=recent.map((x,i)=>{const prev=recent[Math.max(0,i-1)],move=x.close-prev.close,range=Math.max(avgRange*.25,x.high-x.low);return Math.max(-250,Math.min(0,-Math.max(0,-move)/range*250));});
+ drawHistogram("buyersSellersChart",buyerSeller,v=>v>=0?"#20c936":"#f02d2d",4,false);
+ drawHistogram("bearishnessChart",bearish,v=>v<-18?"#168df0":"#75e52b",250,true);
+}
+
+function renderMarketVolume(b){
+  const canvas=$("marketVolumeChart");if(!canvas||!b.length)return;
+  const recent=b.slice(-80),rect=canvas.getBoundingClientRect(),w=Math.max(260,rect.width),h=Math.max(160,rect.height),dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+  const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const left=10,right=42,top=16,bottom=24,plotW=w-left-right,plotH=h-top-bottom;
+  const split=top+plotH*.52,volH=plotH*.43,usdBase=top+plotH*.86,usdH=plotH*.28;
+  ctx.strokeStyle="rgba(145,165,195,.16)";ctx.lineWidth=1;
+  for(let i=0;i<5;i++){const y=top+i*plotH/4;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();}
+  const maxV=Math.max(1,...recent.map(x=>x.volume||0));
+  const avgV=recent.reduce((a,x)=>a+(x.volume||0),0)/recent.length||0;
+  const usd=recent.map((x,i)=>{const prev=recent[Math.max(0,i-1)],pct=prev.close?((x.close-prev.close)/prev.close)*100:0;return Math.max(-100,Math.min(100,-pct*250));});
+  const gap=1,bw=Math.max(1,(plotW-gap*(recent.length-1))/recent.length);
+  recent.forEach((x,i)=>{
+    const px=left+i*(plotW/recent.length);
+    const vh=((x.volume||0)/maxV)*volH;
+    ctx.fillStyle=x.close>=x.open?"rgba(32,217,139,.82)":"rgba(255,83,104,.82)";
+    ctx.fillRect(px,split-vh,bw,vh);
+    const u=usd[i],uh=Math.abs(u)/100*usdH;
+    ctx.fillStyle=u>=0?"rgba(74,168,255,.88)":"rgba(255,212,94,.88)";
+    ctx.fillRect(px,u>=0?usdBase-uh:usdBase,bw,Math.max(1,uh));
+  });
+  ctx.strokeStyle="rgba(220,230,245,.45)";ctx.beginPath();ctx.moveTo(left,usdBase);ctx.lineTo(w-right,usdBase);ctx.stroke();
+  ctx.fillStyle="#dce8fa";ctx.font="bold 11px Arial";ctx.textAlign="left";
+  ctx.fillText("GOLD VOLUME",left,top+11);ctx.fillText("USD IMPACT PROXY",left,split+14);
+  ctx.fillStyle="#9aa9c2";ctx.textAlign="right";ctx.fillText("High",w-4,top+11);ctx.fillText("0",w-4,usdBase+3);
+  const last=recent[recent.length-1],lastVol=last.volume||0;
+  const volRatio=avgV?lastVol/avgV:0;
+  const volText=volRatio>=1.2?"HIGH VOLUME":volRatio<=.8?"LOW VOLUME":"NORMAL VOLUME";
+  const pressure=recent.slice(-8).reduce((sum,x)=>sum+(x.close-x.open),0);
+  const pText=pressure>0?"BULLISH PRESSURE":pressure<0?"BEARISH PRESSURE":"NEUTRAL";
+  const lastUsd=usd[usd.length-1]||0;
+  $("goldVolumeTrend").textContent=volText+" "+(volRatio*100).toFixed(0)+"%";
+  $("goldVolumeTrend").className="mv-value "+(volRatio>=1?"mv-green":"mv-red");
+  $("usdImpact").textContent=(lastUsd>=0?"USD UP PRESSURE":"USD DOWN PRESSURE")+" "+Math.abs(lastUsd).toFixed(1);
+  $("usdImpact").className="mv-value mv-blue";
+  $("marketPressure").textContent=pText;
+  $("marketPressure").className="mv-value "+(pressure>0?"mv-green":pressure<0?"mv-red":"");
+}
+
+
+function drawLinePane(id, series, color, minVal, maxVal, secondary=null){
+ const c=$(id);if(!c)return;const rect=c.getBoundingClientRect(),w=Math.max(240,rect.width),h=Math.max(55,rect.height),dpr=window.devicePixelRatio||1;
+ c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);const x=c.getContext("2d");x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+ const left=5,right=5,top=5,bottom=5,usableW=w-left-right,usableH=h-top-bottom;
+ x.strokeStyle="rgba(145,165,195,.18)";x.lineWidth=1;
+ for(let i=0;i<3;i++){const y=top+i*usableH/2;x.beginPath();x.moveTo(left,y);x.lineTo(w-right,y);x.stroke();}
+ if(minVal<0&&maxVal>0){const zy=top+(maxVal/(maxVal-minVal))*usableH;x.strokeStyle="rgba(180,195,215,.35)";x.setLineDash([3,3]);x.beginPath();x.moveTo(left,zy);x.lineTo(w-right,zy);x.stroke();x.setLineDash([]);}
+ const draw=(arr,col,width)=>{x.beginPath();x.strokeStyle=col;x.lineWidth=width;let started=false;arr.forEach((v,i)=>{if(!Number.isFinite(v))return;const px=left+i/Math.max(1,arr.length-1)*usableW,py=top+(maxVal-v)/(maxVal-minVal)*usableH;if(!started){x.moveTo(px,py);started=true;}else x.lineTo(px,py);});x.stroke();};
+ if(secondary)draw(secondary,"#ff9d42",1.5);
+ draw(series,color,1.8);
+}
+function renderExtraIndicators(b,ind){
+ const rv=ind.R.slice(-100),valid=rv.filter(Number.isFinite);drawLinePane("rsiPane",rv,"#b56cff",0,100);
+ $("rsiPaneValue").textContent=valid.length?fmt(valid[valid.length-1]):"—";
+ const fast=ema(b.map(x=>x.close),12),slow=ema(b.map(x=>x.close),26),macd=fast.map((v,i)=>v-slow[i]),sig=ema(macd,9),hist=macd.map((v,i)=>v-sig[i]);
+ const m=macd.slice(-100),s=sig.slice(-100);const all=m.concat(s),lo=Math.min(...all),hi=Math.max(...all),pad=(hi-lo)*.15||.01;
+ drawLinePane("macdPane",m,"#299cff",lo-pad,hi+pad,s);
+ $("macdPaneValue").textContent=fmt(m[m.length-1])+" / "+fmt(s[s.length-1]);
+}
+
+function updateCandleCountdown(){
+ const el=$("nextCandle");if(!el)return;
+ const ms=({"1min":60000,"5min":300000,"15min":900000,"1h":3600000,"4h":14400000})[$("interval").value]||900000;
+ const sec=Math.max(0,Math.ceil((ms-(Date.now()%ms))/1000));
+ el.textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0");
+}
+
+function updateCapital(){const c=Math.max(0,Number($("capital").value)||0),p=Math.min(100,Math.max(0,Number($("riskPct").value)||0));$("riskAmount").textContent="$"+(c*p/100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function alertSound(type){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=type==="BUY"?880:440;g.gain.value=.06;o.start();setTimeout(()=>o.frequency.value=type==="BUY"?1175:330,160);setTimeout(()=>{o.stop();g.disconnect();},340);}
+
+function analyzeAI(ind,final,s15,s1h,b){
+ const reasons=[]; let score=50; const last=b[b.length-1],recent=b.slice(-8);
+ const trendBull=ind.e9>ind.e21, trendBear=ind.e9<ind.e21;
+ if(trendBull){score+=15;reasons.push("EMA trend is bullish (Fast EMA above Slow EMA).");}
+ else if(trendBear){score-=15;reasons.push("EMA trend is bearish (Fast EMA below Slow EMA).");}
+ if(ind.rsi>=55){score+=10;reasons.push("RSI shows positive momentum.");}
+ else if(ind.rsi<=45){score-=10;reasons.push("RSI shows downside momentum.");}
+ else reasons.push("RSI momentum is neutral; confirmation is limited.");
+ const pressure=recent.reduce((sum,x)=>sum+(x.close-x.open),0);
+ if(pressure>0){score+=8;reasons.push("Recent candle pressure favors buyers.");}
+ else if(pressure<0){score-=8;reasons.push("Recent candle pressure favors sellers.");}
+ if(s15===s1h&&s15!=="WAIT"){score+=12;reasons.push("15M and 1H are aligned.");}
+ else {score-=8;reasons.push("Multi-timeframe confirmation is weak or mixed.");}
+ const range=Math.max(.000001,last.high-last.low); const vol=b.slice(-20).reduce((a,x)=>a+(x.volume||0),0)/Math.max(1,Math.min(20,b.length));
+ if(last.volume>0&&last.volume>vol*1.15){score+=5;reasons.push("Current activity is above recent average volume.");}
+ score=Math.max(0,Math.min(100,score));
+ let decision="WAIT",bias="NEUTRAL";
+ if(score>=72&&trendBull&&s15==="BUY"&&s1h==="BUY") {decision="BUY";bias="BULLISH";}
+ else if(score<=28&&trendBear&&s15==="SELL"&&s1h==="SELL") {decision="SELL";bias="BEARISH";}
+ else if(trendBull)bias="BULLISH / WAIT"; else if(trendBear)bias="BEARISH / WAIT";
+ const atrPct=ind.atr&&ind.c?ind.atr/ind.c*100:0; const risk=atrPct>0.35||decision==="WAIT"?"MEDIUM":score>=82?"LOW":"MEDIUM";
+ const confidence=decision==="WAIT"?Math.max(35,Math.round(100-Math.abs(score-50)*1.2)):Math.round(decision==="BUY"?score:100-score);
+ if(final!=="WAIT"&&final!==decision)reasons.push("Technical signal and AI confirmation do not fully agree, so the hybrid engine stays cautious.");
+ return {decision,bias,risk,score,confidence,reasons,recommend:decision==="BUY"?"Hybrid confirmation supports BUY only with price confirmation and risk control.":decision==="SELL"?"Hybrid confirmation supports SELL only with price confirmation and risk control.":"WAIT for stronger alignment before treating the setup as a high-confidence signal."};
+}
+function renderAI(ai){
+ const d=$("aiDecision"); d.className="ai-decision "+(ai.decision==="BUY"?"ai-buy":ai.decision==="SELL"?"ai-sell":"ai-wait"); d.textContent=ai.decision==="BUY"?"🤖 AI HYBRID: ▲ BUY CONFIRMED":ai.decision==="SELL"?"🤖 AI HYBRID: ▼ SELL CONFIRMED":"🤖 AI HYBRID: ● WAIT — NO CLEAR SETUP";
+ $("aiConfidence").textContent=ai.confidence+"%";$("aiBias").textContent=ai.bias;$("aiRisk").textContent=ai.risk;$("aiRisk").className="ai-value ai-risk-"+ai.risk.toLowerCase();$("aiScore").textContent=ai.score+"/100";
+ $("aiReasons").innerHTML=ai.reasons.map(x=>"<li>"+x+"</li>").join("");$("aiRecommend").textContent="AI Recommendation: "+ai.recommend;
+}
+
+async function update(){if(updating)return;updating=true;$("run").disabled=true;setStatus("● LOADING");try{const count=Number($("bars").value),interval=$("interval").value;const b=await getData(interval,count);const ind=calcSignal(b);let b15=interval==="15min"?b:await getData("15min",100);let h1=interval==="1h"?b:await getData("1h",100);const s15=calcSignal(b15).sig,s1h=calcSignal(h1).sig;let final=ind.sig;if(final==="BUY"&&!(s15==="BUY"&&s1h==="BUY"))final="WAIT";if(final==="SELL"&&!(s15==="SELL"&&s1h==="SELL"))final="WAIT";const price=ind.c,a=ind.atr||price*.001;let sl=price,tp1=price,tp2=price,tp3=price;if(final==="BUY"){sl=price-a*appSettings.slAtr;tp1=price+a;tp2=price+a*2;tp3=price+a*3;}else if(final==="SELL"){sl=price+a*appSettings.slAtr;tp1=price-a;tp2=price-a*2;tp3=price-a*3;}
+$("signal").className="signal "+(final==="BUY"?"buy":final==="SELL"?"sell":"wait");$("signal").textContent=final==="BUY"?"▲ BUY":final==="SELL"?"▼ SELL":"● WAIT";$("entry").textContent=fmt(price);$("sl").textContent=fmt(sl);$("tp1").textContent=fmt(tp1);$("tp2").textContent=fmt(tp2);$("tp3").textContent=fmt(tp3);$("strength").textContent=Math.round(Math.abs(ind.score)/4*100)+"%";$("setSignalScore").value=Math.round(Math.abs(ind.score)/4*100)+"%";$("price").textContent=fmt(price);
+$("tvPrice").textContent=fmt(price);$("tvSignal").textContent=final;$("tvRsi").textContent=fmt(ind.rsi);$("tvAtr").textContent=fmt(ind.atr);
+const hero=$("tvSignalHero");hero.className="signal-hero "+(final==="BUY"?"buy":final==="SELL"?"sell":"wait");hero.textContent=final==="BUY"?"↗ BUY":final==="SELL"?"↘ SELL":"● WAIT";
+const strength=Math.round(Math.abs(ind.score)/4*100);$("tvStrength").textContent=strength+"%";$("tvStrengthBar").style.width=strength+"%";
+$("tvMarketTrend").textContent=ind.e9>ind.e21?"▲ Bullish":ind.e9<ind.e21?"▼ Bearish":"Sideways";
+$("tvFastEma").textContent=fmt(ind.e9);$("tvSlowEma").textContent=fmt(ind.e21);$("tvAtrSummary").textContent=fmt(ind.atr);
+$("dockTrend").textContent=ind.e9>ind.e21?"Bullish":ind.e9<ind.e21?"Bearish":"Sideways";
+$("dockMomentum").textContent=ind.rsi>=60?"Strong":ind.rsi<=40?"Weak":"Neutral";
+$("dockVolatility").textContent=ind.atr>price*.003?"High":ind.atr>price*.0015?"Moderate":"Low";
+
+$("tvEmaTrend").textContent=ind.e9>ind.e21?"BULLISH":ind.e9<ind.e21?"BEARISH":"SIDEWAYS";
+$("tvTrend").textContent=ind.e9>ind.e21?"▲ Bullish EMA structure":ind.e9<ind.e21?"▼ Bearish EMA structure":"• Neutral / Sideways";
+$("tvEntry").textContent=fmt(price);$("tvSl").textContent=fmt(sl);$("tvTp1").textContent=fmt(tp1);$("tvTp2").textContent=fmt(tp2);
+$("ema9").textContent=fmt(ind.e9);$("ema21").textContent=fmt(ind.e21);$("rsi").textContent=fmt(ind.rsi);$("atr").textContent=fmt(ind.atr);
+$("ema9").previousElementSibling.textContent="EMA "+appSettings.emaFast;$("ema21").previousElementSibling.textContent="EMA "+appSettings.emaSlow;$("rsi").previousElementSibling.textContent="RSI "+appSettings.rsiPeriod;$("atr").previousElementSibling.textContent="ATR "+appSettings.atrPeriod;$("confirm").textContent=s15+" / "+s1h;const ai=analyzeAI(ind,final,s15,s1h,b);renderAI(ai);
+const signals=Array(b.length).fill(null);for(let i=30;i<b.length;i++){const x=calcSignal(b.slice(0,i+1));if(x.sig!=="WAIT")signals[i]=x.sig;}const zones=findZones(b);$("supplyInfo").innerHTML=zoneText(zones.supply);$("demandInfo").innerHTML=zoneText(zones.demand);makeChart(b,ind,signals,zones);renderExtraIndicators(b,ind);renderPressure(b);renderMarketVolume(b);
+const trend=ind.e9>ind.e21?"Bullish":ind.e9<ind.e21?"Bearish":"Sideways";$("trend").textContent=trend;$("trend").className=trend==="Bullish"?"good":trend==="Bearish"?"bad":"warn";const mom=ind.rsi>=60?"Strong":ind.rsi<=40?"Weak":"Neutral";$("momentum").textContent=mom;$("momentum").className=mom==="Strong"?"good":mom==="Weak"?"bad":"warn";$("volatility").textContent=ind.atr>price*.003?"High":ind.atr>price*.0015?"Medium":"Low";
+const barTime=b[b.length-1].time;if((final==="BUY"||final==="SELL")&&(final!==lastSignal||barTime!==lastBarTime)){alertSound(final);log("New "+final+" technical signal • "+fmt(price),final==="BUY"?"good":"bad");}lastSignal=final;lastBarTime=barTime;setStatus("● LIVE • "+new Date().toLocaleTimeString(),"live");log("Updated "+interval+" • "+b.length+" candles","good");
+}catch(e){setStatus("● ERROR","err");log(e.message,"bad");}finally{updating=false;$("run").disabled=false;}}
+
+
+
+function applyAppearance(preview=true){
+ const r=document.documentElement.style;
+ r.setProperty("--bg",appSettings.colorBg);
+ r.setProperty("--panel",appSettings.colorPanel);
+ r.setProperty("--blue",appSettings.colorAccent);
+ r.setProperty("--green",appSettings.colorBull);
+ r.setProperty("--red",appSettings.colorBear);
+ r.setProperty("--yellow",appSettings.colorVolume);
+ r.setProperty("--app-font-size",appSettings.fontSize+"px");
+ r.setProperty("--card-radius",appSettings.cardRadius+"px");
+ document.body.style.fontSize=appSettings.fontSize+"px";
+ document.querySelectorAll(".panel,.card").forEach(el=>el.style.borderRadius=appSettings.cardRadius+"px");
+ document.body.classList.toggle("compact-mode",!!appSettings.compactMode);
+ if(appSettings.compactMode) document.querySelectorAll(".panel").forEach(el=>el.style.padding="8px");
+ else document.querySelectorAll(".panel").forEach(el=>el.style.padding="");
+ if(preview && chart && chart.$marketData){
+   const d=chart.$marketData; makeChart(d.bars,d.ind,d.signals,d.zones);
+ }
+}
+function setAppearanceFromForm(){
+ const ids={colorBull:"colorBull",colorBear:"colorBear",colorEmaFast:"colorEmaFast",colorEmaSlow:"colorEmaSlow",colorDemand:"colorDemand",colorSupply:"colorSupply",colorVolume:"colorVolume",colorBg:"colorBg",colorPanel:"colorPanel",colorAccent:"colorAccent"};
+ Object.entries(ids).forEach(([key,id])=>appSettings[key]=$(id).value);
+ appSettings.fontSize=Number($("fontSize").value);
+ appSettings.emaWidth=Number($("emaWidth").value);
+ appSettings.candleScale=Number($("candleScale").value);
+ appSettings.cardRadius=Number($("cardRadius").value);
+ appSettings.showGrid=$("setShowGrid").checked;
+ appSettings.showPriceLabels=$("setShowPriceLabels").checked;
+ appSettings.compactMode=$("setCompactMode").checked;
+ $("fontSizeValue").textContent=appSettings.fontSize+" px";
+ $("emaWidthValue").textContent=appSettings.emaWidth+" px";
+ $("candleScaleValue").textContent=appSettings.candleScale+"%";
+ $("cardRadiusValue").textContent=appSettings.cardRadius+" px";
+ applyAppearance(true);
+}
+
+function loadSettingsIntoForm(){
+ const map={setEmaFast:"emaFast",setEmaSlow:"emaSlow",setRsi:"rsiPeriod",setAtr:"atrPeriod",setChartHeight:"chartHeight",setSlAtr:"slAtr"};
+ Object.entries(map).forEach(([id,key])=>$(id).value=appSettings[key]);
+ ["showEma","showZones","showVolume","showMarkers","showPressure"].forEach(k=>$("set"+k[0].toUpperCase()+k.slice(1)).checked=!!appSettings[k]);
+ $("interval").value=uiSettings.interval;$("bars").value=uiSettings.bars;$("refresh").value=uiSettings.refresh;
+ const appearance={colorBull:"colorBull",colorBear:"colorBear",colorEmaFast:"colorEmaFast",colorEmaSlow:"colorEmaSlow",colorDemand:"colorDemand",colorSupply:"colorSupply",colorVolume:"colorVolume",colorBg:"colorBg",colorPanel:"colorPanel",colorAccent:"colorAccent"};
+ Object.entries(appearance).forEach(([key,id])=>$(id).value=appSettings[key]);
+ $("fontSize").value=appSettings.fontSize;$("emaWidth").value=appSettings.emaWidth;$("candleScale").value=appSettings.candleScale;$("cardRadius").value=appSettings.cardRadius;
+ $("setShowGrid").checked=appSettings.showGrid;$("setShowPriceLabels").checked=appSettings.showPriceLabels;$("setCompactMode").checked=appSettings.compactMode;
+ $("fontSizeValue").textContent=appSettings.fontSize+" px";$("emaWidthValue").textContent=appSettings.emaWidth+" px";$("candleScaleValue").textContent=appSettings.candleScale+"%";$("cardRadiusValue").textContent=appSettings.cardRadius+" px";
+ applyAppearance(false);
+}
+function saveDashboardSettings(){
+ const num=(id,min,max)=>{const v=Number($(id).value);if(!Number.isFinite(v)||v<min||v>max)throw Error("សូមពិនិត្យតម្លៃ Settings ម្តងទៀត។");return v;};
+ const fast=num("setEmaFast",2,200),slow=num("setEmaSlow",3,300);
+ if(fast>=slow)throw Error("EMA Fast ត្រូវតែតូចជាង EMA Slow។");
+ appSettings={emaFast:fast,emaSlow:slow,rsiPeriod:num("setRsi",2,100),atrPeriod:num("setAtr",2,100),chartHeight:num("setChartHeight",320,900),slAtr:num("setSlAtr",.2,10),
+ showEma:$("setShowEma").checked,showZones:$("setShowZones").checked,showVolume:$("setShowVolume").checked,showMarkers:$("setShowMarkers").checked,showPressure:$("setShowPressure").checked,
+ showGrid:$("setShowGrid").checked,showPriceLabels:$("setShowPriceLabels").checked,compactMode:$("setCompactMode").checked,
+ colorBull:$("colorBull").value,colorBear:$("colorBear").value,colorEmaFast:$("colorEmaFast").value,colorEmaSlow:$("colorEmaSlow").value,
+ colorDemand:$("colorDemand").value,colorSupply:$("colorSupply").value,colorVolume:$("colorVolume").value,
+ colorBg:$("colorBg").value,colorPanel:$("colorPanel").value,colorAccent:$("colorAccent").value,
+ fontSize:Number($("fontSize").value),emaWidth:Number($("emaWidth").value),candleScale:Number($("candleScale").value),cardRadius:Number($("cardRadius").value)};
+ uiSettings={interval:$("interval").value,bars:$("bars").value,refresh:$("refresh").value};
+ applyAppearance(false);
+ try{localStorage.setItem("xauDashboardSettingsV43",JSON.stringify(appSettings));localStorage.setItem("xauDashboardUiV43",JSON.stringify(uiSettings));}catch(e){}
+ document.querySelector(".chartbox").style.height=appSettings.chartHeight+"px";
+ updateRefreshTimer();$("settingsToggle").textContent="▾ Hide Settings";$("settingsBody").hidden=false;update();
+}
+function resetDashboardSettings(){
+ appSettings={...DEFAULT_SETTINGS};uiSettings={interval:"15min",bars:"200",refresh:"60000"};
+ try{localStorage.removeItem("xauDashboardSettingsV43");localStorage.removeItem("xauDashboardUiV43");}catch(e){}
+ loadSettingsIntoForm();applyAppearance(false);document.querySelector(".chartbox").style.height=appSettings.chartHeight+"px";updateRefreshTimer();update();
+}
+function updateRefreshTimer(){clearInterval(timer);const ms=Number($("refresh").value);if(ms>0)timer=setInterval(update,ms);}
+
+["colorBull","colorBear","colorEmaFast","colorEmaSlow","colorDemand","colorSupply","colorVolume","colorBg","colorPanel","colorAccent","fontSize","emaWidth","candleScale","cardRadius","setShowGrid","setShowPriceLabels","setCompactMode"].forEach(id=>{
+ const el=$(id); if(el) el.addEventListener("input",setAppearanceFromForm);
+ if(el && el.type==="checkbox") el.addEventListener("change",setAppearanceFromForm);
+});
+$("themeDark").onclick=()=>{Object.assign(appSettings,{colorBg:"#070d19",colorPanel:"#101b2e",colorAccent:"#246df0"});loadSettingsIntoForm();applyAppearance(true);};
+$("themeLight").onclick=()=>{Object.assign(appSettings,{colorBg:"#eef3fb",colorPanel:"#ffffff",colorAccent:"#246df0"});loadSettingsIntoForm();applyAppearance(true);};
+$("themeReset").onclick=()=>{const keep={...appSettings,emaFast:appSettings.emaFast,emaSlow:appSettings.emaSlow};appSettings={...DEFAULT_SETTINGS,emaFast:keep.emaFast,emaSlow:keep.emaSlow};loadSettingsIntoForm();applyAppearance(true);};
+
+$("settingsToggle").addEventListener("click",()=>{const body=$("settingsBody");body.hidden=!body.hidden;$("settingsToggle").textContent=body.hidden?"▸ Show Settings":"▾ Hide Settings";});
+$("saveSettings").addEventListener("click",()=>{try{saveDashboardSettings();}catch(e){setStatus("● SETTINGS ERROR","err");log(e.message,"bad");}});
+$("resetSettings").addEventListener("click",resetDashboardSettings);
+$("run").addEventListener("click",update);$("refresh").addEventListener("change",updateRefreshTimer);$("zoomIn").onclick=()=>chart&&chart.zoom(1.2);$("zoomOut").onclick=()=>chart&&chart.zoom(.8);$("resetZoom").onclick=()=>chart&&chart.resetZoom();$("capital").addEventListener("input",updateCapital);$("riskPct").addEventListener("input",updateCapital);$("soundBtn").onclick=async()=>{const AC=window.AudioContext||window.webkitAudioContext;if(!AC){log("Audio is not supported in this browser","bad");return;}audioCtx=new AC();if(audioCtx.state==="suspended")await audioCtx.resume();$("soundBtn").textContent="🔊 Sound Enabled";alertSound("BUY");};$("testBtn").onclick=async()=>{const AC=window.AudioContext||window.webkitAudioContext;if(!audioCtx&&AC)audioCtx=new AC();if(audioCtx&&audioCtx.state==="suspended")await audioCtx.resume();alertSound("BUY");log("Test alert requested","warn");};document.querySelectorAll(".tf-btn").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll(".tf-btn").forEach(x=>x.classList.remove("active"));btn.classList.add("active");$("interval").value=btn.dataset.tf;update();}));
+$("tvEma").addEventListener("click",()=>{$("setShowEma").checked=!$("setShowEma").checked;setAppearanceFromForm();$("tvEma").classList.toggle("active",$("setShowEma").checked);});
+$("tvVolume").addEventListener("click",()=>{$("setShowVolume").checked=!$("setShowVolume").checked;setAppearanceFromForm();$("tvVolume").classList.toggle("active",$("setShowVolume").checked);});
+$("tvGrid").addEventListener("click",()=>{$("setShowGrid").checked=!$("setShowGrid").checked;setAppearanceFromForm();$("tvGrid").classList.toggle("active",$("setShowGrid").checked);});
+loadSettingsIntoForm();document.querySelector(".chartbox").style.height=appSettings.chartHeight+"px";updateRefreshTimer();updateCapital();updateCandleCountdown();setInterval(updateCandleCountdown,1000);window.addEventListener("resize",()=>{if(chart&&chart.$marketData){renderExtraIndicators(chart.$marketData.bars,calcSignal(chart.$marketData.bars));renderPressure(chart.$marketData.bars);renderMarketVolume(chart.$marketData.bars);}});
+</script>
+</body>
+</html>
